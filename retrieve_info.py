@@ -54,14 +54,17 @@ def get_api_response_data(api_url, params=None):
     return data
 
 
+def get_list_team_by_repo(repo_name, owner_name):
+    api_url = '/repos/{owner_name}/{repo_name}/teams'.format(owner_name=owner_name, repo_name=repo_name)
+    teams = get_api_response_data(api_url)
+    return teams
+
+
 def get_list_repos():
     api_url = '/orgs/Magestore/repos'
     page = 1
     repos = []
     per_page = 100
-
-    repo_info = []
-    descriptions = []
 
     while True:
         res = get_api_response_data(api_url, {'page': page, 'per_page': per_page})
@@ -69,6 +72,13 @@ def get_list_repos():
             break
         repos += res
         page += 1
+    return repos
+
+
+def generate_repo_info():
+    repos = get_list_repos()
+    repo_info = []
+    descriptions = []
 
     repo_info.append('#, Repo, Type, Team, Team permission, Owner, Description\n')
     for ip, repo in enumerate(repos):
@@ -100,12 +110,6 @@ def get_list_repos():
             f.write(des + '\n')
 
 
-def get_list_team_by_repo(repo_name, owner_name):
-    api_url = '/repos/{owner_name}/{repo_name}/teams'.format(owner_name=owner_name, repo_name=repo_name)
-    teams = get_api_response_data(api_url)
-    return teams
-
-
 if __name__ == '__main__':
     API_USER, API_TOKEN = get_git_credential()
-    get_list_repos()
+    generate_repo_info()
