@@ -60,6 +60,7 @@ def get_list_repos():
     repos = []
     per_page = 100
 
+    repo_info = []
     descriptions = []
 
     while True:
@@ -69,31 +70,34 @@ def get_list_repos():
         repos += res
         page += 1
 
+    repo_info.append('#, Repo, Type, Team, Team permission, Owner, Description\n')
+    for ip, repo in enumerate(repos):
+        name = repo.get('name')
+        repo_type = 'Private' if repo.get('private') else 'Public'
+        owner = repo.get('owner').get('login')
+        description = repo.get('description') or ''
+
+        teams = get_list_team_by_repo(name, owner)
+        if not teams:
+            repo_info.append('%s ,%s ,%s ,%s , %s, %s, %s\n' % (ip + 1, name, repo_type, '', '', owner, ''))
+            descriptions.append(description)
+        else:
+            for it, team in enumerate(teams):
+                if it == 0:
+                    repo_info.append('%s ,%s ,%s ,%s , %s, %s, %s\n' % (ip + 1, name, repo_type, team.get('name'), TEAM_PERMISSION.get(team.get('permission')), owner, ''))
+                    descriptions.append(description)
+                else:
+                    repo_info.append('%s ,%s ,%s ,%s , %s, %s, %s\n' % ('', '', '', team.get('name'), TEAM_PERMISSION.get(team.get('permission')), '', ''))
+                    descriptions.append(' ')
+
     with open('repos.csv', 'w') as f:
-        f.write('#, Repo, Type, Team, Team permission, Owner, Description\n')
-        for ip, repo in enumerate(repos):
-            name = repo.get('name')
-            repo_type = 'Private' if repo.get('private') else 'Public'
-            owner = repo.get('owner').get('login')
-            description = repo.get('description') or ''
+        for info in repo_info:
+            f.write(info)
 
-            teams = get_list_team_by_repo(name, owner)
-            if not teams:
-                f.write('%s ,%s ,%s ,%s , %s, %s, %s\n' % (ip + 1, name, repo_type, '', '', owner, ''))
-                descriptions.append(description)
-            else:
-                for it, team in enumerate(teams):
-                    if it == 0:
-                        f.write('%s ,%s ,%s ,%s , %s, %s, %s\n' % (ip + 1, name, repo_type, team.get('name'), TEAM_PERMISSION.get(team.get('permission')), owner, ''))
-                        descriptions.append(description)
-                    else:
-                        f.write('%s ,%s ,%s ,%s , %s, %s, %s\n' % ('', '', '', team.get('name'), TEAM_PERMISSION.get(team.get('permission')), '', ''))
-                        descriptions.append(' ')
-
-    with open('description', 'w') as f:
+    with open('description.csv', 'w') as f:
         f.write('Desc')
         for des in descriptions:
-            f.write(des+'\n')
+            f.write(des + '\n')
 
 
 def get_list_team_by_repo(repo_name, owner_name):
