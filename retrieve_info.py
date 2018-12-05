@@ -5,6 +5,7 @@ import requests
 API_URL_ROOT = 'https://api.github.com'
 API_USER = ''
 API_TOKEN = ''
+TEAM_PERMISSION = {'pull': 'Read', 'push': 'Write', 'admin': 'Admin'}
 
 
 def read_params(filename):
@@ -25,49 +26,70 @@ def get_git_credential():
     return user, token
 
 
-def generate_api_request_url(api_url):
+def generate_api_request_url(api_url, params=None):
     url = API_URL_ROOT + api_url
     url = url.replace('USER', API_USER)
-    url += '?access_token=%s' % API_TOKEN
+    params_str = ''
+    if not params:
+        params = {}
+    params.update({
+        'access_token': API_TOKEN
+    })
+    for i, key in enumerate(sorted(list(params.keys()))):
+        if i == 0:
+            seperator = '?'
+        else:
+            seperator = '&'
+        params_str += "%s%s=%s" % (seperator, key, params.get(key))
+    url += params_str
     return url
 
 
-def get_api_response_data(api_url):
-    url = generate_api_request_url(api_url)
-    resp = requests.get(url)
+def get_api_response_data(api_url, params=None):
+    url = generate_api_request_url(api_url, params)
+    resp = requests.get(url, params)
+    if resp.status_code != 200:
+        return False
     data = resp.json()
     return data
 
 
 def get_list_repos():
-    api_url = '/user/repos'
-    repos = get_api_response_data(api_url)
+    api_url = '/orgs/Magestore/repos'
+    page = 1
+    repos = []
+    per_page = 100
+
+    while True:
+        res = get_api_response_data(api_url, {'page': page, 'per_page': per_page})
+        if not res:
+            break
+        repos += res
+        page += 1
+
     with open('repos.csv', 'w') as f:
-        f.write('#, Repo, Type, Team, Owner, Description\n')
-        for index, repo in enumerate(repos):
+        f.write('#, Repo, Type, Team, Team permission, Owner, Description\n')
+        for ip, repo in enumerate(repos):
             name = repo.get('name')
             type = 'Private' if repo.get('private') else 'Public'
             owner = repo.get('owner').get('login')
-            teams = get_list_team_by_repo(name, owner)
-            # FIXME: get list of team name
-
             description = repo.get('description')
-            f.write('%s ,%s ,%s ,%s , %s, %s\n' % (index, name, type, '', owner, description))
+
+            teams = get_list_team_by_repo(name, owner)
+            if not teams:
+                f.write('%s ,%s ,%s ,%s , %s, %s, %s\n' % (ip + 1, name, type, '', '', owner, description))
+            else:
+                for it, team in enumerate(teams):
+                    if it == 0:
+                        f.write('%s ,%s ,%s ,%s , %s, %s, %s\n' % (ip + 1, name, type, team.get('name'), TEAM_PERMISSION.get(team.get('permission')), owner, description))
+                    else:
+                        f.write('%s ,%s ,%s ,%s , %s, %s, %s\n' % ('', '', '', team.get('name'), TEAM_PERMISSION.get(team.get('permission')), '', ''))
 
 
 def get_list_team_by_repo(repo_name, owner_name):
     api_url = '/repos/{owner_name}/{repo_name}/teams'.format(owner_name=owner_name, repo_name=repo_name)
-    data = get_api_response_data(api_url)
-    return data
-
-#
-# def test_repos():
-#     api_url = '/user/repos'
-#     repos = get_api_response_data(api_url)
-#     with open('repos.csv', 'w') as f:
-#         f.write('#, Repo, Type, Team, Owner, Description\n')
-#         for index, repo in enumerate(repos):
-#             name = repo.get('name')
+    teams = get_api_response_data(api_url)
+    return teams
 
 
 if __name__ == '__main__':
