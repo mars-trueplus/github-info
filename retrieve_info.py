@@ -27,6 +27,8 @@ def get_git_credential():
 
 
 def generate_api_request_url(api_url, params=None):
+    global API_USER, API_TOKEN
+    API_USER, API_TOKEN = get_git_credential()
     url = API_URL_ROOT + api_url
     url = url.replace('USER', API_USER)
     params_str = ''
@@ -111,5 +113,4 @@ def generate_repo_info():
 
 
 if __name__ == '__main__':
-    API_USER, API_TOKEN = get_git_credential()
     generate_repo_info()
