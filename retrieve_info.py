@@ -60,6 +60,8 @@ def get_list_repos():
     repos = []
     per_page = 100
 
+    descriptions = []
+
     while True:
         res = get_api_response_data(api_url, {'page': page, 'per_page': per_page})
         if not res:
@@ -71,19 +73,27 @@ def get_list_repos():
         f.write('#, Repo, Type, Team, Team permission, Owner, Description\n')
         for ip, repo in enumerate(repos):
             name = repo.get('name')
-            type = 'Private' if repo.get('private') else 'Public'
+            repo_type = 'Private' if repo.get('private') else 'Public'
             owner = repo.get('owner').get('login')
-            description = repo.get('description')
+            description = repo.get('description') or ''
 
             teams = get_list_team_by_repo(name, owner)
             if not teams:
-                f.write('%s ,%s ,%s ,%s , %s, %s, %s\n' % (ip + 1, name, type, '', '', owner, description))
+                f.write('%s ,%s ,%s ,%s , %s, %s, %s\n' % (ip + 1, name, repo_type, '', '', owner, ''))
+                descriptions.append(description)
             else:
                 for it, team in enumerate(teams):
                     if it == 0:
-                        f.write('%s ,%s ,%s ,%s , %s, %s, %s\n' % (ip + 1, name, type, team.get('name'), TEAM_PERMISSION.get(team.get('permission')), owner, description))
+                        f.write('%s ,%s ,%s ,%s , %s, %s, %s\n' % (ip + 1, name, repo_type, team.get('name'), TEAM_PERMISSION.get(team.get('permission')), owner, ''))
+                        descriptions.append(description)
                     else:
                         f.write('%s ,%s ,%s ,%s , %s, %s, %s\n' % ('', '', '', team.get('name'), TEAM_PERMISSION.get(team.get('permission')), '', ''))
+                        descriptions.append(' ')
+
+    with open('description', 'w') as f:
+        f.write('Desc')
+        for des in descriptions:
+            f.write(des+'\n')
 
 
 def get_list_team_by_repo(repo_name, owner_name):

@@ -6,6 +6,8 @@ __pycache__/
 *$py.class
 .idea/
 git_credential
+repos.csv
+description
 # C extensions
 *.so
 
