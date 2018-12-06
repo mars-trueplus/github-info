@@ -21,10 +21,10 @@ def get_list_repo_url():
     return clone_urls
 
 
-def git_credential_command(credential_file_name):
+def set_git_credential_command(credential_file_name):
     git_credential_url = os.path.abspath(credential_file_name)
     set_credential_command = "export HOME=/home/xmars; git config --global credential.helper 'store --file %s'" % git_credential_url
-    return set_credential_command
+    LOCAL_CON.local(set_credential_command)
 
 
 def remove_git_credential():
@@ -40,18 +40,22 @@ def clone_repos():
         LOCAL_CON.local('mkdir -p %s' % REPO_PATH)
 
     clone_urls = get_list_repo_url()
-    set_credential_command = git_credential_command('github_credential_url')
+
+    set_git_credential_command('github_credential_url')
 
     for url in clone_urls:
         repo_name = url.split('/')[-1].replace('.git', '')
         repo_path = '{path}/{repo_name}'.format(path=REPO_PATH, repo_name=repo_name)
         if os.path.isdir(repo_path):
             LOCAL_CON.local('rm -rf %s' % repo_path)
-        clone_comand = 'git clone {url} {repo_path}'.format(url=url, repo_path=repo_path)
+        # need export HOME to local .gitconfig file with credential
+        clone_command = 'export HOME=/home/xmars; git clone {url} {repo_path}'.format(url=url, repo_path=repo_path)
         try:
-            LOCAL_CON.local(set_credential_command + '&&' + clone_comand)
+            LOCAL_CON.local(clone_command)
         except Exception as e:
             print(e)
+
+    remove_git_credential()
 
 
 def create_repo(repo_name):
