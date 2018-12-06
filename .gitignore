@@ -5,9 +5,12 @@ __pycache__/
 *.py[cod]
 *$py.class
 .idea/
-git_credential
+github_params
+github_credential_url
 repos.csv
 description.csv
+bitbucket_credential_url
+bitbucket_params
 # C extensions
 *.so
 

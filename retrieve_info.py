@@ -19,8 +19,8 @@ def read_params(filename):
     return vals
 
 
-def get_git_credential():
-    vals = read_params('git_credential')
+def get_github_params():
+    vals = read_params('github_params')
     user = vals.get('USER')
     token = vals.get('TOKEN')
     return user, token
@@ -28,7 +28,7 @@ def get_git_credential():
 
 def generate_api_request_url(api_url, params=None):
     global API_USER, API_TOKEN
-    API_USER, API_TOKEN = get_git_credential()
+    API_USER, API_TOKEN = get_github_params()
     url = API_URL_ROOT + api_url
     url = url.replace('USER', API_USER)
     params_str = ''
