@@ -5,6 +5,7 @@ import requests
 from fabric import Connection
 import os
 
+LOCAL_USER = 'xmars'
 REPO_PATH = '/home/xmars/Documents/magestore-repo'
 BITBUCKET_ROOT_API = 'https://api.bitbucket.org'
 BITBUCKET_TOKEN = ''
@@ -21,14 +22,18 @@ def get_list_repo_url():
     return clone_urls
 
 
+def export_home_command():
+    return 'export HOME=/home/{user};'.format(user=LOCAL_USER)
+
+
 def set_git_credential_command(credential_file_name):
     git_credential_url = os.path.abspath(credential_file_name)
-    set_credential_command = "export HOME=/home/xmars; git config --global credential.helper 'store --file %s'" % git_credential_url
-    LOCAL_CON.local(set_credential_command)
+    set_credential_command = "git config --global credential.helper 'store --file %s'" % git_credential_url
+    LOCAL_CON.local(export_home_command() + set_credential_command)
 
 
 def remove_git_credential():
-    LOCAL_CON.local("export HOME=/home/xmars; git config --global --unset credential.helper")
+    LOCAL_CON.local(export_home_command() + "git config --global --unset credential.helper")
 
 
 def clone_repos():
@@ -49,7 +54,7 @@ def clone_repos():
         if os.path.isdir(repo_path):
             LOCAL_CON.local('rm -rf %s' % repo_path)
         # need export HOME to local .gitconfig file with credential
-        clone_command = 'export HOME=/home/xmars; git clone {url} {repo_path}'.format(url=url, repo_path=repo_path)
+        clone_command = '{export_home} git clone {url} {repo_path}'.format(export_home=export_home_command(), url=url, repo_path=repo_path)
         try:
             LOCAL_CON.local(clone_command)
         except Exception as e:
@@ -69,21 +74,32 @@ def create_repo(repo_name):
     return bitbucket_url
 
 
-def push_repo(local_path, repo_name, repo_url):
+def push_repo(repo_path, repo_url):
     """
     Push local repo to bitbucket
-    :param local_path:
-    :param repo_name:
+    :param repo_path:
     :param repo_url:
     :return:
     """
-    command = 'cd %s && git init && git add --all && git commit -m "Magestore backup from github" && ' % local_path
     init_repo_cmd = 'git init && git add --all && git commit -m "Magestore - Backup Github Repos"'
     set_remote_cmd = 'git remote add origin %s' % repo_url
-    push_command = 'git push -u origin --all'
+    push_cmd = 'git push -u origin --all'
+    LOCAL_CON.local('{export_home} cd {repo_path} && {init_repo_cmd} && {set_remote_cmd} && {push_cmd}'.format(
+        export_home=export_home_command(),
+        repo_path=repo_path,
+        init_repo_cmd=init_repo_cmd,
+        set_remote_cmd=set_remote_cmd,
+        push_cmd=push_cmd)
+    )
+
+
+def push_repos():
+    for d in os.listdir(REPO_PATH):
+        path = os.path.abspath(d)
 
 
 if __name__ == '__main__':
+    # push_repos()
     clone_repos()
     # params_path = os.path.abspath('bitbucket_params')
     # bitbucket_params = retrieve_info.read_params(params_path)
