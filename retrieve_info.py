@@ -20,7 +20,7 @@ def read_params(filename):
 
 
 def get_github_params():
-    vals = read_params('github_params')
+    vals = read_params('github_params.ms')
     user = vals.get('USER')
     token = vals.get('TOKEN')
     return user, token

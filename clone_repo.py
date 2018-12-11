@@ -59,7 +59,7 @@ def clone_repos():
     clone_urls = get_list_repo_url()
 
     remove_git_credential()
-    set_git_credential('github_credential_url')
+    set_git_credential('github_credential_url.ms')
 
     for url in clone_urls:
         repo_name = url.split('/')[-1].replace('.git', '')
@@ -135,5 +135,4 @@ def push_repos():
 
 
 if __name__ == '__main__':
-    update_bitbucket_params()
     clone_repos()

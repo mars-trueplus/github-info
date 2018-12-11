@@ -5,7 +5,7 @@ __pycache__/
 *.py[cod]
 *$py.class
 .idea/
-.ms
+*.ms
 github_params
 github_credential_url
 repos.csv
